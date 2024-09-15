@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <bits/getopt_core.h>
-#include <lab.h>
+#include <../src/lab.h>
 
 int main(int argc, char *argv[])
 {
@@ -14,6 +14,9 @@ int main(int argc, char *argv[])
   while((c = getopt(argc, argv, "abc:")) != -1)
     switch(c)
   {
+    case 'v':
+    case 'V':
+    printf("Version %02d.%02d\n", lab_VERSION_MAJOR, lab_VERSION_MINOR);
     case 'a':
      printf("get a here");
       break;
@@ -34,6 +37,6 @@ int main(int argc, char *argv[])
       return 1;
 
     default:
-      abort();
+        fprintf(stderr, "Usage:......");
   }
 }
