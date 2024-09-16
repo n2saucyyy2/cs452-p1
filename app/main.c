@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <bits/getopt_core.h>
-#include <../src/lab.h>
+#include "../src/lab.h"
 
 int main(int argc, char *argv[])
 {
