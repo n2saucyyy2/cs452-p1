@@ -7,16 +7,16 @@
 
 int main(int argc, char *argv[])
 {
-  printf("hello world\n");
+  //printf("hello world\n");
 
   int c;
 
-  while((c = getopt(argc, argv, "abc:")) != -1)
+  while((c = getopt(argc, argv, "abc:v")) != -1){
     switch(c)
-  {
+{
     case 'v':
-    case 'V':
-    printf("Version %02d.%02d\n", lab_VERSION_MAJOR, lab_VERSION_MINOR);
+      printf("Version %02d.%02d\n", lab_VERSION_MAJOR, lab_VERSION_MINOR);
+      exit(0);
     case 'a':
      printf("get a here");
       break;
@@ -29,14 +29,15 @@ int main(int argc, char *argv[])
       printf("get c here");
       break;
 
-    case '?':
-      if(isprint(getopt))
-        fprintf(stderr, "Unknown Option", optopt);
-      else
-        fprintf(stderr, "Unkown Option", optopt);
-      return 1;
+    // case '?':
+    //   if(isprint(getopt))
+    //     fprintf(stderr, "Unknown Option", optopt);
+    //   else
+    //     fprintf(stderr, "Unkown Option", optopt);
+    //   return 1;
 
     default:
-        fprintf(stderr, "Usage:......");
+        exit(1);
+   }
   }
 }
