@@ -7,6 +7,53 @@
 #include <errno.h>
 #include <limits.h>
 
+char *get_prompt(const char *env) {
+    const char *prompt_value = getenv(env);
+    const char *default_prompt = "shell$ ";
+    
+    if (prompt_value == NULL || strlen(prompt_value) == 0) {
+        prompt_value = default_prompt;
+    }
+    
+    char *prompt = malloc(strlen(prompt_value) + 1);
+    if (prompt == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return NULL;
+    }
+    
+    strcpy(prompt, prompt_value);
+    return prompt;
+}
+
+int set_prompt(const char *new_prompt) {
+    // Create a copy of new_prompt that we can modify
+    char *trimmed_prompt = strdup(new_prompt);
+    if (trimmed_prompt == NULL) {
+        perror("Failed to allocate memory for new prompt");
+        return -1;
+    }
+
+    // Remove leading and trailing quotes if present
+    size_t len = strlen(trimmed_prompt);
+    if (len > 1 && trimmed_prompt[0] == '"' && trimmed_prompt[len - 1] == '"') {
+        // Remove the first quote
+        memmove(trimmed_prompt, trimmed_prompt + 1, len - 1);
+        // Remove the last quote
+        trimmed_prompt[len - 2] = '\0';
+    }
+
+    // Set the environment variable
+    if (setenv("MY_PROMPT", trimmed_prompt, 1) != 0) {
+        perror("Failed to set MY_PROMPT");
+        free(trimmed_prompt);
+        return -1;
+    }
+
+    free(trimmed_prompt);
+    return 0;
+}
+
+
 int change_dir(char **dir) {
     const char *new_dir;
     if (dir == NULL || *dir == NULL) {

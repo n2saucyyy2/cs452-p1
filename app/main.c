@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <string.h>
 #include "../src/lab.h"
 
 int main(int argc, char *argv[])
@@ -23,9 +24,27 @@ int main(int argc, char *argv[])
 
     char *line;
     char **args;
+    char *prompt;
+    int status = 0;
     using_history();
 
-    while ((line = readline("$ ")) != NULL) {
+    while (1) {
+        prompt = get_prompt("MY_PROMPT");
+        if (prompt == NULL) {
+            fprintf(stderr, "Failed to set prompt\n");
+            status = 1;
+            break;
+        }
+
+        line = readline(prompt);
+        free(prompt);
+
+        if (line == NULL) {
+            // EOF (Ctrl-D) detected
+            printf("\n");
+            break;
+        }
+
         if (strlen(line) > 0) {
             add_history(line);
             line = trim_white(line);
@@ -40,6 +59,19 @@ int main(int argc, char *argv[])
                     cmd_free(args);
                     free(line);
                     break;
+                } else if (strncmp(args[0], "MY_PROMPT=", 10) == 0) {
+                    // Handle the case where the new prompt might include spaces
+                    char new_prompt[256] = {0};  // Adjust size as needed
+                    int i = 1;
+                    strncpy(new_prompt, args[0] + 10, sizeof(new_prompt) - 1);
+                    while (args[i] != NULL && i < 10) {  // Limit to prevent buffer overflow
+                        strncat(new_prompt, " ", sizeof(new_prompt) - strlen(new_prompt) - 1);
+                        strncat(new_prompt, args[i], sizeof(new_prompt) - strlen(new_prompt) - 1);
+                        i++;
+                    }
+                    if (set_prompt(new_prompt) == 0) {
+                        printf("Prompt updated successfully\n");
+                    }
                 } else {
                     printf("Command entered: %s\n", args[0]);
                     // Here you would typically fork and exec the command
@@ -51,5 +83,6 @@ int main(int argc, char *argv[])
     }
 
     printf("Exiting shell\n");
-    return 0;
+    rl_clear_history();
+    return status;
 }

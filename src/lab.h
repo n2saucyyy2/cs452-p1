@@ -37,6 +37,17 @@ extern "C"
    */
   char *get_prompt(const char *env);
 
+
+ /**
+   * @brief Set a new shell prompt. This function updates the MY_PROMPT
+   * environment variable with the provided new prompt string. If successful,
+   * this new prompt will be used in subsequent command line inputs.
+   *
+   * @param new_prompt The new prompt string to set
+   * @return int Returns 0 on success, -1 on failure (with errno set)
+   */
+  int set_prompt(const char *new_prompt);
+
   /**
    * Changes the current working directory of the shell. Uses the linux system
    * call chdir. With no arguments the users home directory is used as the
