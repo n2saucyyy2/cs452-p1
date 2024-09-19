@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
                     }
                 } else {
                     printf("Command entered: %s\n", args[0]);
-                    // Here you would typically fork and exec the command
                 }
                 cmd_free(args);
             }
