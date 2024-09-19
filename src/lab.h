@@ -5,6 +5,8 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
+#include <pwd.h>
+#include <linux/limits.h>
 
 #define lab_VERSION_MAJOR 1
 #define lab_VERSION_MINOR 0
@@ -131,10 +133,16 @@ extern "C"
    */
   void parse_args(int argc, char **argv);
 
-
+  /**
+  * @brief Print the command history
+  *
+  * @param limit The maximum number of history entries to print. If 0, print all entries.
+  * @return int Returns 0 on success, -1 on failure
+  */
+  int print_history(int limit);
 
 #ifdef __cplusplus
-} // extern "C"
+}  extern "C"
 #endif
 
 #endif
