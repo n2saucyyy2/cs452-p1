@@ -1,43 +1,55 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <unistd.h>
-#include <bits/getopt_core.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "../src/lab.h"
 
 int main(int argc, char *argv[])
 {
-  //printf("hello world\n");
+    int opt;
 
-  int c;
+    while ((opt = getopt(argc, argv, "vV")) != -1) {
+        switch (opt) {
+            case 'V':
+            case 'v':
+                printf("Version %d.%d\n", lab_VERSION_MAJOR, lab_VERSION_MINOR);
+                exit(0);
+            default:
+                fprintf(stderr, "Usage: %s [-v|-V]\n", argv[0]);
+                exit(1);
+        }
+    }
 
-  while((c = getopt(argc, argv, "abc:v")) != -1){
-    switch(c)
-{
-    case 'v':
-      printf("Version %02d.%02d\n", lab_VERSION_MAJOR, lab_VERSION_MINOR);
-      exit(0);
-    case 'a':
-     printf("get a here");
-      break;
+    char *line;
+    char **args;
+    using_history();
 
-    case 'b':
-      printf("get b here");
-      break;
+    while ((line = readline("$ ")) != NULL) {
+        if (strlen(line) > 0) {
+            add_history(line);
+            line = trim_white(line);
+            args = cmd_parse(line);
 
-    case 'c':
-      printf("get c here");
-      break;
+            if (args != NULL) {
+                if (strcmp(args[0], "cd") == 0) {
+                    if (change_dir(&args[1]) == 0) {
+                        printf("Directory changed successfully\n");
+                    }
+                } else if (strcmp(args[0], "exit") == 0) {
+                    cmd_free(args);
+                    free(line);
+                    break;
+                } else {
+                    printf("Command entered: %s\n", args[0]);
+                    // Here you would typically fork and exec the command
+                }
+                cmd_free(args);
+            }
+        }
+        free(line);
+    }
 
-    // case '?':
-    //   if(isprint(getopt))
-    //     fprintf(stderr, "Unknown Option", optopt);
-    //   else
-    //     fprintf(stderr, "Unkown Option", optopt);
-    //   return 1;
-
-    default:
-        exit(1);
-   }
-  }
+    printf("Exiting shell\n");
+    return 0;
 }
