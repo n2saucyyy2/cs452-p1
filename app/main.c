@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     init_shell();
 
     // Set default prompt
-    if (setenv("MY_PROMPT", "shell$ ", 1) != 0) {
+    if (setenv("MY_PROMPT", "shell$ ", 1 && custom_prompt == NULL) != 0) {
         perror("Failed to set default prompt");
     }
 
