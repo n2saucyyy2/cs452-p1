@@ -33,43 +33,36 @@ char *get_prompt(const char *env) {
 }
 
 int set_prompt(const char *new_prompt) {
-    if (new_prompt == NULL) {
-        fprintf(stderr, "Error: New prompt is NULL\n");
+    if (new_prompt == NULL || *new_prompt == '\0') {
+        fprintf(stderr, "Error: custom prompt was not entered correctly\n");
+        fprintf(stderr, "USAGE: MY_PROMPT=\"xxxx\"\n");
         return PROMPT_OTHER_ERROR;
     }
 
-    size_t len = strlen(new_prompt);
-    if (len == 0) {
-        fprintf(stderr, "Error: New prompt is empty\n");
-        return PROMPT_OTHER_ERROR;
-    }
-
-    // Check for mismatched quotes
-    int starts_with_quote = (new_prompt[0] == '"');
-    int ends_with_quote = (new_prompt[len - 1] == '"');
-
-    if (starts_with_quote != ends_with_quote) {
-        if (starts_with_quote) {
-            return PROMPT_MISSING_END_QUOTE;
-        } else {
-            return PROMPT_MISSING_START_QUOTE;
+    // Don't check for quotes if it comes from the command-line argument
+    if (strchr(new_prompt, '"') == NULL) {
+        // Directly set the environment variable with the raw prompt
+        if (setenv("MY_PROMPT", new_prompt, 1) != 0) {
+            perror("Failed to set MY_PROMPT");
+            return PROMPT_OTHER_ERROR;
         }
+        return PROMPT_OK;
     }
 
-    // Create a copy of new_prompt that we can modify
-   char *trimmed_prompt = strdup(new_prompt);
+    // Handle prompt from environment variable (which might have quotes)
+    size_t len = strlen(new_prompt);
+    if (new_prompt[0] != '"' || new_prompt[len - 1] != '"') {
+        fprintf(stderr, "Error: Prompt must be enclosed in quotes\n");
+        return PROMPT_OTHER_ERROR;
+    }
+
+    // Remove the quotes and set the environment variable
+    char *trimmed_prompt = strndup(new_prompt + 1, len - 2);
     if (trimmed_prompt == NULL) {
         perror("Failed to allocate memory for new prompt");
         return PROMPT_OTHER_ERROR;
     }
 
-    // Remove leading and trailing quotes if present
-    if (starts_with_quote && ends_with_quote) {
-        memmove(trimmed_prompt, trimmed_prompt + 1, len - 2);
-        trimmed_prompt[len - 2] = '\0';
-    }
-
-    // Set the environment variable
     if (setenv("MY_PROMPT", trimmed_prompt, 1) != 0) {
         perror("Failed to set MY_PROMPT");
         free(trimmed_prompt);
