@@ -8,6 +8,10 @@
 #include <pwd.h>
 #include <linux/limits.h>
 #include <readline/history.h>
+#include <sys/wait.h>
+#include <bits/waitflags.h>
+#include <termios.h>
+#include <signal.h>
 
 #define PROMPT_OK 0
 #define PROMPT_MISSING_END_QUOTE 1
@@ -186,4 +190,126 @@ int print_history(int limit) {
     }
 
     return 0;
+}
+
+int start_background_process(struct shell *sh, char **args, char *full_command) {
+    if (sh->bg_job_count >= MAX_BG_JOBS) {
+        fprintf(stderr, "Maximum number of background jobs reached\n");
+        return -1;
+    }
+
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        perror("fork failed");
+        return -1;
+    } else if (pid == 0) {
+        // Child process
+        setpgid(0, 0);
+        if (execvp(args[0], args) == -1) {
+            perror("execvp failed");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        // Parent process
+        int job_id = sh->next_job_id++;
+        sh->bg_jobs[sh->bg_job_count].job_id = job_id;
+        sh->bg_jobs[sh->bg_job_count].pid = pid;
+        sh->bg_jobs[sh->bg_job_count].command = strdup(full_command);
+        sh->bg_jobs[sh->bg_job_count].status = 0; // 0 for Running
+        sh->bg_job_count++;
+
+        printf("[%d] %d\n", job_id, pid);
+    }
+
+    return 0;
+}
+
+// void check_background_processes(struct shell *sh) {
+//     for (int i = 0; i < sh->bg_job_count; i++) {
+//         int status;
+//         pid_t result = waitpid(sh->bg_jobs[i].pid, &status, WNOHANG);
+
+//         if (result > 0) {
+//             // Process has finished
+//             printf("[%d] Done %s\n", sh->bg_jobs[i].job_id, sh->bg_jobs[i].command);
+
+//             // Free the command string
+//             free(sh->bg_jobs[i].command);
+
+//             // Remove the job from the list by shifting the remaining jobs
+//             for (int j = i; j < sh->bg_job_count - 1; j++) {
+//                 sh->bg_jobs[j] = sh->bg_jobs[j + 1];
+//             }
+
+//             sh->bg_job_count--;
+//             i--; // Decrement i to recheck this index, as we've shifted the array
+//         }
+//     }
+// }
+
+void check_background_processes(struct shell *sh) {
+    for (int i = 0; i < sh->bg_job_count; i++) {
+        int status;
+        pid_t result = waitpid(sh->bg_jobs[i].pid, &status, WNOHANG);
+
+        if (result > 0) {
+            // Process has finished
+            sh->bg_jobs[i].status = 1; // 1 for Done
+        }
+    }
+}
+
+void sh_init(struct shell *sh) {
+    sh->shell_terminal = STDIN_FILENO;
+    sh->shell_is_interactive = isatty(sh->shell_terminal);
+
+    if (sh->shell_is_interactive) {
+        // Loop until we are in the foreground
+        while (tcgetpgrp(sh->shell_terminal) != (sh->shell_pgid = getpgrp()))
+            kill(-sh->shell_pgid, SIGTTIN);
+
+        // Ignore interactive and job-control signals
+        signal(SIGINT, SIG_IGN);
+        signal(SIGQUIT, SIG_IGN);
+        signal(SIGTSTP, SIG_IGN);
+        signal(SIGTTIN, SIG_IGN);
+        signal(SIGTTOU, SIG_IGN);
+
+        // Put ourselves in our own process group
+        sh->shell_pgid = getpid();
+        if (setpgid(sh->shell_pgid, sh->shell_pgid) < 0) {
+            perror("Couldn't put the shell in its own process group");
+            exit(1);
+        }
+
+        // Grab control of the terminal
+        tcsetpgrp(sh->shell_terminal, sh->shell_pgid);
+
+        // Save default terminal attributes for shell
+        tcgetattr(sh->shell_terminal, &sh->shell_tmodes);
+    }
+
+    sh->bg_job_count = 0;
+    sh->next_job_id = 1; // Initialize next_job_id
+    sh->prompt = get_prompt("MY_PROMPT");
+}
+
+void sh_destroy(struct shell *sh) {
+    if (sh->prompt) {
+        free(sh->prompt);
+    }
+    for (int i = 0; i < sh->bg_job_count; i++) {
+        if (sh->bg_jobs[i].command) {
+            free(sh->bg_jobs[i].command);
+        }
+    }
+}
+
+void print_jobs(struct shell *sh) {
+    for (int i = 0; i < sh->bg_job_count; i++) {
+        struct bg_job *job = &sh->bg_jobs[i];
+        const char *status = (job->status == 0) ? "Running" : "Done   ";
+        printf("[%d] %d %s %s\n", job->job_id, job->pid, status, job->command);
+    }
 }

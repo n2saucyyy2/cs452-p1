@@ -11,11 +11,19 @@
 #define lab_VERSION_MAJOR 1
 #define lab_VERSION_MINOR 0
 #define UNUSED(x) (void)x;
+#define MAX_BG_JOBS 100
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+  struct bg_job {
+    int job_id;
+    pid_t pid;
+    char *command;
+    int status;
+  };
 
   struct shell
   {
@@ -24,8 +32,10 @@ extern "C"
     struct termios shell_tmodes;
     int shell_terminal;
     char *prompt;
+    struct bg_job bg_jobs[MAX_BG_JOBS];
+    int bg_job_count;
+    int next_job_id;
   };
-
 
 
   /**
@@ -140,6 +150,31 @@ extern "C"
   * @return int Returns 0 on success, -1 on failure
   */
   int print_history(int limit);
+
+  /**
+ * @brief Start a process in the background
+ *
+ * @param sh The shell structure
+ * @param args The command arguments
+ * @param full_command The full command string
+ * @return int Returns 0 on success, -1 on failure
+ */
+int start_background_process(struct shell *sh, char **args, char *full_command);
+
+/**
+ * @brief Check and report finished background processes
+ *
+ * @param sh The shell structure
+ */
+void check_background_processes(struct shell *sh);
+
+/**
+ * @brief Print all background jobs
+ *
+ * @param sh The shell structure
+ */
+void print_jobs(struct shell *sh);
+
 
 #ifdef __cplusplus
 }  extern "C"

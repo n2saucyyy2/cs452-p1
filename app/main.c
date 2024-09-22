@@ -93,13 +93,14 @@ int execute_command(char **args) {
 }
 
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
     int opt;
     char *custom_prompt = NULL;
 
     // Initialize shell
     init_shell();
+    struct shell sh = {0};
+    sh_init(&sh);
 
     // Set default prompt
     if (setenv("MY_PROMPT", "shell$ ", 1 && custom_prompt == NULL) != 0) {
@@ -137,9 +138,11 @@ for (int i = 1; i < argc; i++) {
     int status = 0;
     using_history();
 
-    while (1) {
+   while (1) {
         // Ensure the shell is in the foreground
         tcsetpgrp(shell_terminal, shell_pgid);
+        // Check for finished background processes
+        check_background_processes(&sh);
 
         prompt = get_prompt("MY_PROMPT");
         if (prompt == NULL) {
@@ -163,8 +166,18 @@ for (int i = 1; i < argc; i++) {
 
         if (strlen(line) > 0) {
             add_history(line);
-            line = trim_white(line);
-            args = cmd_parse(line);
+            char *trimmed_line = trim_white(line);
+            
+            // Check if the command should run in the background
+            int run_in_background = 0;
+            size_t len = strlen(trimmed_line);
+            if (len > 0 && trimmed_line[len - 1] == '&') {
+                run_in_background = 1;
+                trimmed_line[len - 1] = '\0';  // Remove the '&'
+                trimmed_line = trim_white(trimmed_line);  // Trim any spaces before '&'
+            }
+
+            args = cmd_parse(trimmed_line);
 
             if (args != NULL) {
                 if (strcmp(args[0], "cd") == 0) {
@@ -183,18 +196,27 @@ for (int i = 1; i < argc; i++) {
                     if (print_history(limit) != 0) {
                         fprintf(stderr, "Failed to print history\n");
                     }
-                } if (strncmp(args[0], "MY_PROMPT=", 10) == 0) {
+                } else if (strncmp(args[0], "MY_PROMPT=", 10) == 0) {
                     char *new_prompt = args[0] + 10;  // Skip "MY_PROMPT="
                     int prompt_result = set_prompt(new_prompt);
-                     if (prompt_result != PROMPT_OK) {
-                         // Error message is already printed in set_prompt
+                    if (prompt_result != PROMPT_OK) {
+                        // Error message is already printed in set_prompt
                         continue;  // Continue the shell loop
-            }
-            printf("Prompt updated successfully.\n");
-        } else {
-                    // Execute the command
-                    if (execute_command(args) != 0) {
-                        fprintf(stderr, "Command execution failed\n");
+                    }
+                    printf("Prompt updated successfully.\n");
+                }   else if (strcmp(args[0], "jobs") == 0) {
+                    print_jobs(&sh);
+                }
+                 else {
+                    if (run_in_background) {
+                        if (start_background_process(&sh, args, trimmed_line) != 0) {
+                            fprintf(stderr, "Failed to start background process\n");
+                        }
+                    } else {
+                        // Execute the command
+                        if (execute_command(args) != 0) {
+                            fprintf(stderr, "Command execution failed\n");
+                        }
                     }
                 }
                 cmd_free(args);
@@ -205,5 +227,6 @@ for (int i = 1; i < argc; i++) {
 
     printf("Exiting shell\n");
     rl_clear_history();
+    sh_destroy(&sh);
     return status;
 }
