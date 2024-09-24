@@ -9,6 +9,7 @@
 #include <termios.h>
 #include "../src/lab.h"
 
+
 #define PROMPT_OK 0
 #define PROMPT_MISSING_END_QUOTE 1
 #define PROMPT_MISSING_START_QUOTE 2
@@ -92,32 +93,29 @@ int execute_command(char **args) {
     return 0;
 }
 
+extern int optind;
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
+
     int opt;
-    char *custom_prompt = NULL;
-
     // Initialize shell
     init_shell();
     struct shell sh = {0};
     sh_init(&sh);
 
-    // Set default prompt
-    if (setenv("MY_PROMPT", "shell$ ", 1 && custom_prompt == NULL) != 0) {
-        perror("Failed to set default prompt");
-    }
-
-   // Process command-line arguments
-for (int i = 1; i < argc; i++) {
-    if (strncmp(argv[i], "MY_PROMPT=", 10) == 0) {
-        char *custom_prompt = argv[i] + 10;  // Skip "MY_PROMPT="
-        int prompt_result = set_prompt(custom_prompt);  // Pass raw string, no quotes check needed
+    // Get custom prompt from environment variable
+    char *custom_prompt = getenv("MY_PROMPT");
+    if (custom_prompt != NULL) {
+        int prompt_result = set_prompt(custom_prompt);
         if (prompt_result != PROMPT_OK) {
-            exit(1);  // Exit if prompt setting fails
+            fprintf(stderr, "Warning: Failed to set custom prompt from environment variable\n");
         }
-        break;
+    } else {
+        // Use default prompt if MY_PROMPT is not set
+        if (setenv("MY_PROMPT", "shell$ ", 1) != 0) {
+            perror("Failed to set default prompt");
+        }
     }
-}
 
     // Process other command-line options
     while ((opt = getopt(argc, argv, "vV")) != -1) {
@@ -127,10 +125,11 @@ for (int i = 1; i < argc; i++) {
                 printf("Version %d.%d\n", lab_VERSION_MAJOR, lab_VERSION_MINOR);
                 exit(0);
             default:
-                fprintf(stderr, "Usage: %s [-v|-V] [MY_PROMPT=<prompt>]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-v|-V]\n", argv[0]);
                 exit(1);
         }
     }
+
 
     char *line;
     char **args;

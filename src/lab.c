@@ -225,29 +225,6 @@ int start_background_process(struct shell *sh, char **args, char *full_command) 
     return 0;
 }
 
-// void check_background_processes(struct shell *sh) {
-//     for (int i = 0; i < sh->bg_job_count; i++) {
-//         int status;
-//         pid_t result = waitpid(sh->bg_jobs[i].pid, &status, WNOHANG);
-
-//         if (result > 0) {
-//             // Process has finished
-//             printf("[%d] Done %s\n", sh->bg_jobs[i].job_id, sh->bg_jobs[i].command);
-
-//             // Free the command string
-//             free(sh->bg_jobs[i].command);
-
-//             // Remove the job from the list by shifting the remaining jobs
-//             for (int j = i; j < sh->bg_job_count - 1; j++) {
-//                 sh->bg_jobs[j] = sh->bg_jobs[j + 1];
-//             }
-
-//             sh->bg_job_count--;
-//             i--; // Decrement i to recheck this index, as we've shifted the array
-//         }
-//     }
-// }
-
 void check_background_processes(struct shell *sh) {
     for (int i = 0; i < sh->bg_job_count; i++) {
         int status;
