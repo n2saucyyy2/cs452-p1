@@ -93,8 +93,6 @@ int execute_command(char **args) {
     return 0;
 }
 
-extern int optind;
-
 int main(int argc, char *argv[]) {
 
     int opt;
