@@ -1,3 +1,24 @@
+/**
+ * @file lab.c
+ * @brief Implementation of shell utility functions
+ *
+ * This file contains the implementation of various utility functions
+ * used by the custom shell. Key functions include:
+ *
+ * - Prompt management (get_prompt, set_prompt)
+ * - Directory changing (change_dir)
+ * - Command parsing (cmd_parse, cmd_free)
+ * - String manipulation (trim_white)
+ * - Command history management (print_history)
+ * - Background process handling (start_background_process, check_background_processes)
+ * - Shell initialization and cleanup (sh_init, sh_destroy)
+ * - Job control (print_jobs)
+ *
+ * These functions provide core functionality for the shell implemented in main.c.
+ *
+ * @author nolanstetz
+ * @date 25th of September 2024
+ */
 #include "lab.h"
 #include <stdio.h>
 #include <string.h>
@@ -19,13 +40,14 @@
 #define PROMPT_OTHER_ERROR 3
 
 char *get_prompt(const char *env) {
+    //get the prompt value from the env variable
     const char *prompt_value = getenv(env);
     const char *default_prompt = "shell$ ";
-    
+    //use default prompt if nothing given
     if (prompt_value == NULL || strlen(prompt_value) == 0) {
         prompt_value = default_prompt;
     }
-    
+    //allocate memory for prompt
     char *prompt = malloc(strlen(prompt_value) + 1);
     if (prompt == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
@@ -114,6 +136,7 @@ int change_dir(char **dir) {
 }
 
 char **cmd_parse(char const *line) {
+    //get max num of arguments allowed and allocate memory for args array
     long arg_max = sysconf(_SC_ARG_MAX);
     char **args = malloc((arg_max + 1) * sizeof(char *));
     if (args == NULL) {
@@ -124,7 +147,7 @@ char **cmd_parse(char const *line) {
     char *token;
     char *line_copy = strdup(line);
     int i = 0;
-
+    //tokenize the line and store each token in the args array
     token = strtok(line_copy, " \t\n");
     while (token != NULL && i < arg_max) {
         args[i] = strdup(token);
@@ -145,6 +168,7 @@ char **cmd_parse(char const *line) {
 
 void cmd_free(char **line) {
     if (line == NULL) return;
+    //free each argument string
     for (int i = 0; line[i] != NULL; i++) {
         free(line[i]);
     }
@@ -168,6 +192,7 @@ char *trim_white(char *line) {
 }
 
 int print_history(int limit) {
+    //get the history list
     HIST_ENTRY **hist_list;
     int hist_length, i, start;
 
@@ -276,6 +301,7 @@ void sh_destroy(struct shell *sh) {
     if (sh->prompt) {
         free(sh->prompt);
     }
+    //free command strings for each background job
     for (int i = 0; i < sh->bg_job_count; i++) {
         if (sh->bg_jobs[i].command) {
             free(sh->bg_jobs[i].command);
@@ -286,6 +312,7 @@ void sh_destroy(struct shell *sh) {
 void print_jobs(struct shell *sh) {
     for (int i = 0; i < sh->bg_job_count; i++) {
         struct bg_job *job = &sh->bg_jobs[i];
+        //determine status
         const char *status = (job->status == 0) ? "Running" : "Done   ";
         printf("[%d] %d %s %s\n", job->job_id, job->pid, status, job->command);
     }

@@ -1,3 +1,22 @@
+/**
+ * @file main.c
+ * @brief Main entry point for the custom shell implementation
+ *
+ * This file contains the main function and core logic for a custom shell.
+ * It handles command-line argument parsing, shell initialization, the main
+ * command loop, and command execution. Key features include:
+ *
+ * - Version printing with '-v' or '-V' flags
+ * - Custom prompt management
+ * - Command parsing and execution
+ * - Built-in command handling (cd, exit, history)
+ * - Background process management
+ * - Command history using GNU Readline
+ * - Signal handling and terminal control
+ *
+ * @author nolanstetz
+ * @date 25th of September 2024
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -221,7 +240,7 @@ int main(int argc, char *argv[]) {
         }
         free(line);
     }
-
+    //clean up and exit
     printf("Exiting shell\n");
     rl_clear_history();
     sh_destroy(&sh);

@@ -1,41 +1,56 @@
+Nolan Stetz
+
 Design Ideas for the Shell Implementation
 
 The provided codebase implements a basic shell with several 
 key functions. Here are the design ideas behind the main tasks achieved by this shell:
 
-1.  Prompt Management: The shell allows users to customize the prompt using 
+1.  Version Printing: The shell allows users to print the version information by running 
+the program with the '-v' or '-V' flag (e.g., './myprogram -v'). This feature 
+is implemented in the main function, providing a quick way for users to check the shell's 
+version without starting the interactive mode.
+
+2.  Prompt Management: The shell allows users to customize the prompt using 
 an environment variable (`MY_PROMPT`). The `get_prompt()` and `set_prompt()` functions 
 handle the retrieval and update of the prompt, supporting both plain text and quoted strings. 
 This design allows for easy personalization of the shell's appearance.
 
-2.  Command Execution: The `execute_command()` function handles the execution of 
+3.  Command Execution: The `execute_command()` function handles the execution of 
 user-entered commands. It forks a child process, resets signal handlers, and calls 
 `execvp()` to run the command. The parent process waits for the child to finish and 
 returns the exit status. This design separates the shell logic from the command 
 execution, making the code more modular and maintainable.
 
-3.  Built-in Commands: The shell supports several built-in commands, such as 
+4.  Built-in Commands: The shell supports several built-in commands, such as 
 `cd`, `exit`, `history`, and `jobs`. The `do_builtin()` function checks if the 
 first argument in the command line is a built-in, and if so, it handles the command 
 directly. This design allows for easy expansion of built-in functionality without 
 modifying the core command execution logic.
 
-4.  Background Processes: The shell can run commands in the background by appending 
+5.  Background Processes: The shell can run commands in the background by appending 
 a `&` to the end of the command. The `start_background_process()` function forks a child 
 process for the background task and tracks its status in the `bg_jobs` array. The 
 `check_background_processes()` function periodically checks for finished background 
 processes and updates their status. This design allows users to run long-running tasks 
 without blocking the shell's main loop.
 
-5.  History Management: The shell uses the GNU Readline library to maintain a command 
+6.  History Management: The shell uses the GNU Readline library to maintain a command 
 history. The `print_history()` function allows users to view the command history, with an 
 optional limit on the number of entries displayed. This design provides a familiar command 
 history experience for users.
 
-6.  Terminal Management: The shell initializes and manages the terminal settings using 
+7.  Terminal Management: The shell initializes and manages the terminal settings using 
 the `termios` library. The `init_shell()` function sets up signal handlers, puts the shell 
 in its own process group, and saves the default terminal attributes. This design ensures the 
 shell maintains control of the terminal and behaves correctly in an interactive environment.
+
+8. I did not use any Chatbot or AI but I did revisit some C coding examples for things like memory
+allocation and pointers as I do not use this language very much. Last time I used it was probably two years ago in 
+CS 253 or ECE 330 so I needed a basic reminder of how things worked and then I was good to go. Hope this is ok documentation:
+
+    https://www.geeksforgeeks.org/dynamic-memory-allocation-in-c-using-malloc-calloc-free-and-realloc/
+    https://www.geeksforgeeks.org/c-pointers/
+    https://www.youtube.com/watch?v=FlZMEKrJtmc 
 
 Overall, the design of this shell implementation focuses on providing a basic, yet extensible, 
 shell experience with customizable prompts, built-in commands, background process management, 
